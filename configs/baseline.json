@@ -1,0 +1,14 @@
+{
+  "name": "nominal",
+  "deadline_s": 52.0,
+  "initial_energy_j": 240.0,
+  "reserve_energy_j": 15.0,
+  "max_position_uncertainty_m": 0.19,
+  "max_control_period_s": 0.4,
+  "cpu_utilization_limit": 0.8,
+  "max_cross_track_error_m": 1.5,
+  "motion_load": 1.0,
+  "sensor_noise_m": 0.012,
+  "process_noise_m_per_s": 0.022,
+  "waypoints": [[0.0, 0.0], [3.0, 0.0], [3.0, 2.0], [5.0, 2.0], [5.0, 5.0]]
+}

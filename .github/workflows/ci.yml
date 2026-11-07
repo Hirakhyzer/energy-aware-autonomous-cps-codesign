@@ -1,0 +1,28 @@
+name: Python tests and CLI smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: python -m pip install -e '.[dev]'
+      - name: Unit and integration tests
+        run: python -m pytest -q
+      - name: CLI smoke test
+        run: |
+          eco-cps simulate --config configs/baseline.json --policy joint --seed 7
+          eco-cps benchmark --config configs/baseline.json --seeds 0 1 --out results/ci
+          eco-cps report --input results/ci
+      - name: Module entry point
+        run: python -m eco_cps --help

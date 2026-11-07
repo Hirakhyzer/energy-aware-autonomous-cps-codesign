@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this research software, please cite the repository and its version."
+title: "ECO-CPS: Energy-Aware Co-Design for Autonomous Cyber-Physical Systems"
+authors:
+  - family-names: Khyzer
+    given-names: Hira
+version: 0.1.0
+date-released: 2026-11-07
+repository-code: "https://github.com/Hirakhyzer/energy-aware-autonomous-cps-codesign"
+license: MIT

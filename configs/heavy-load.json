@@ -1,0 +1,9 @@
+{
+  "name": "heavy-load",
+  "motion_load": 1.35,
+  "sensor_noise_m": 0.020,
+  "process_noise_m_per_s": 0.038,
+  "initial_energy_j": 240.0,
+  "reserve_energy_j": 15.0,
+  "deadline_s": 52.0
+}
