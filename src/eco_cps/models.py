@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from math import isfinite
 from typing import Literal
 
-PolicyName = Literal["fixed", "sensing", "computing", "control", "joint"]
+PolicyName = Literal["fixed", "sensing", "computing", "control", "joint", "joint_qos"]
 
 
 @dataclass(frozen=True)
@@ -47,6 +47,7 @@ class Scenario:
     process_noise_m_per_s: float = 0.022
     switch_energy_j: float = 0.018
     optimize_period_s: float = 0.5
+    service_time_limit_s: float | None = None
     waypoints: tuple[tuple[float, float], ...] = (
         (0.0, 0.0), (3.0, 0.0), (3.0, 2.0), (5.0, 2.0), (5.0, 5.0)
     )
@@ -57,6 +58,10 @@ class Scenario:
                    self.cpu_utilization_limit, self.max_cross_track_error_m,
                    self.motion_load, self.sensor_noise_m, self.process_noise_m_per_s,
                    self.optimize_period_s)
+        if self.service_time_limit_s is not None:
+            if (not isfinite(self.service_time_limit_s) or
+                not 0 < self.service_time_limit_s <= self.deadline_s):
+                raise ValueError("Service-time target must be positive, finite, and at most the mission deadline")
         if any(not isfinite(v) for v in numeric):
             raise ValueError("Scenario parameters must be finite")
         if any(x <= 0 for x in (self.dt_s, self.deadline_s, self.initial_energy_j,
@@ -129,6 +134,13 @@ class RunResult:
     fallback_count: int
     mode_changes: int
     trace: list[dict[str, float | int | str | bool]] = field(default_factory=list)
+    service_time_limit_s: float | None = None
+
+    @property
+    def service_target_met(self) -> bool | None:
+        if self.service_time_limit_s is None:
+            return None
+        return self.completed and self.duration_s <= self.service_time_limit_s + 1e-9
 
     def summary(self) -> dict[str, object]:
         return {"policy": self.policy, "scenario": self.scenario, "seed": self.seed,
@@ -138,4 +150,6 @@ class RunResult:
                 "constraint_violations": self.constraint_violations,
                 "max_tracking_error_m": round(self.max_tracking_error_m, 6),
                 "final_distance_m": round(self.final_distance_m, 6),
-                "fallback_count": self.fallback_count, "mode_changes": self.mode_changes}
+                "fallback_count": self.fallback_count, "mode_changes": self.mode_changes,
+                "service_time_limit_s": self.service_time_limit_s,
+                "service_target_met": self.service_target_met}

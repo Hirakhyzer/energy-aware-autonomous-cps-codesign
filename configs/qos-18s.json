@@ -1,0 +1,8 @@
+{
+  "name": "qos-18s",
+  "deadline_s": 52.0,
+  "service_time_limit_s": 18.0,
+  "initial_energy_j": 240.0,
+  "reserve_energy_j": 15.0,
+  "waypoints": [[0.0, 0.0], [3.0, 0.0], [3.0, 2.0], [5.0, 2.0], [5.0, 5.0]]
+}

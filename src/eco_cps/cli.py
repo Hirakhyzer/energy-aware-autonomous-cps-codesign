@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from .benchmark import benchmark, save_results, summarize
+from .benchmark import benchmark, save_results, summarize, paired_analysis
 from .config import load_scenario
 from .models import Scenario
 from .simulation import simulate
@@ -13,24 +13,25 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="eco-cps", description="Energy-aware CPS simulation and benchmark toolkit")
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("simulate", help="Run one seeded autonomous mission")
-    s.add_argument("--policy", choices=("fixed", "sensing", "computing", "control", "joint"), default="joint")
+    s.add_argument("--policy", choices=("fixed", "sensing", "computing", "control", "joint", "joint_qos"), default="joint")
     s.add_argument("--config", type=Path, default=None)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--out", type=Path, default=None)
-    b = sub.add_parser("benchmark", help="Run paired comparisons of all five policies")
+    b = sub.add_parser("benchmark", help="Run paired comparisons of all six policies")
     b.add_argument("--config", type=Path, default=None)
     b.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     b.add_argument("--out", type=Path, default=Path("results/benchmark"))
     b.add_argument("--traces", action="store_true")
     r = sub.add_parser("report", help="Read an existing benchmark summary")
     r.add_argument("--input", type=Path, default=Path("results/benchmark"))
+    r.add_argument("--paired", action="store_true", help="Show paired policy comparisons against fixed operation")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     if args.command == "report":
-        path = args.input / "summary.json"
+        path = args.input / ("paired.json" if args.paired else "summary.json")
         data = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, list):
             raise ValueError("Summary must be a JSON array")

@@ -8,6 +8,8 @@
 
 **RQ4.** How robust are feasible candidate rankings when process noise, movement load, battery reserve, and mission deadline change?
 
+**RQ5 (v0.2).** How much modeled energy can be saved while meeting an explicit mission-completion service target, and how do the results compare with unconstrained joint energy optimization?
+
 ## Hypotheses to test (not established findings)
 
 - H1: The joint policy uses less energy than fixed operation on at least some specified scenarios.

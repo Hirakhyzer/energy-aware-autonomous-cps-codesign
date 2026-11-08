@@ -14,7 +14,9 @@ The platform implements a deterministic differential-drive *unicycle* robot benc
 - **Three adaptation dimensions:** localization sensor sampling (2/5/10 Hz), processor clock proxy (80/160/240 MHz), and control period (0.1/0.2/0.4 s) with cruise-speed adaptation (0.4/0.6/0.8 m/s).
 - **Joint policy:** enumerate 81 candidate configurations, reject those violating approximate feasibility checks, and minimize predicted mission energy including switching penalties.
 - **Conservative fallback:** choose the fixed high-fidelity configuration if all candidates are rejected. Log fallback; **do not** claim fallback is safe or feasible when constraints cannot be met.
-- **Five policy baselines:** fixed, sensing-only, computing-only, control-only, and integrated joint adaptation.
+- **Six policies:** fixed, sensing-only, computing-only, control-only, energy-only joint adaptation, and v0.2 service-time-aware `joint_qos`.
+- **Service-quality constraint (v0.2):** an optional mission-completion target separate from the hard mission deadline, with deadline-aware selection for `joint_qos` and per-run observed target attainment.
+- **Matched-seed analysis (v0.2):** paired energy and mission-time differences against fixed control, completion and target-attainment counts, and deterministic exploratory percentile bootstrap intervals.
 - **Reproducibility:** seeded localization noise, identical seeds across policy comparisons, complete per-run summaries, optional step traces, automated tests, and Python 3.10–3.13 CI.
 
 The main distinction from the companion repository [`energy-aware-adaptive-autonomous-cps`](https://github.com/Hirakhyzer/energy-aware-adaptive-autonomous-cps) is the explicit **joint finite-search co-design formulation**, layered feasible-mode screening, and sensor/CPU/control ablation suite. Reuse or duplication of scientific claims is not intended.
@@ -27,7 +29,7 @@ flowchart TD
     S --> E[Localization estimate and uncertainty]
     E --> O[Joint candidate optimizer]
     O --> G{Predictive feasibility guard}
-    G -->|admissible| D[CPU / sensing / control configuration]
+    G -->|admissible and optional service-time target met| D[CPU / sensing / control configuration]
     G -->|none admissible| F[Conservative fallback + violation log]
     D --> C[Way-point tracking controller]
     F --> C
@@ -65,6 +67,13 @@ eco-cps benchmark --config configs/baseline.json --seeds 0 1 2 --out results/ben
 # Read saved aggregate metrics
 eco-cps report --input results/benchmark
 
+# v0.2: compare all six policies with a modeled 18-second service-time target
+eco-cps benchmark --config configs/qos-18s.json --seeds 0 1 2 --out results/qos-18s
+eco-cps report --input results/qos-18s --paired
+
+# v0.2: directly simulate the deadline-aware policy
+eco-cps simulate --config configs/qos-18s.json --policy joint_qos --seed 0
+
 # Two-scenario experiment (nominal and heavy load), 5 seeds each
 python experiments/run_all.py
 
@@ -81,13 +90,13 @@ For each modeled operating mode, the objective approximates
 + \lambda_{\mathrm{switch}}\mathbf{1}[m\ne m_{\mathrm{prev}}]
 \]
 
-subject to predicted CPU timing, sensor-uncertainty, control-period, mission-deadline, and battery-reserve bounds. Tracking-error bounds are monitored in simulation; no formal guarantee is claimed for future trajectories. The benchmark uses synthetic parameters and a simple waypoint controller rather than measured robot dynamics.
+subject to predicted CPU timing, sensor-uncertainty, control-period, mission-deadline, and battery-reserve bounds. `joint_qos` additionally rejects candidate configurations whose predicted arrival would exceed the optional `service_time_limit_s` target. Tracking-error bounds are monitored in simulation; no formal guarantee is claimed for future trajectories. The benchmark uses synthetic parameters and a simple waypoint controller rather than measured robot dynamics.
 
 Actual simulation energy is calculated by integrating a per-component model: `E_total = E_sensing + E_computing + E_communication + E_actuation + E_switching`. Unlike measured electricity consumption, these numbers are **model outputs**, not physical hardware observations.
 
 ## Outputs
 
-`runs.json`, `runs.csv`, `summary.json`, and `summary.csv` include completion, energy, duration, timing violations, cross-track error, and fallback statistics. Passing `--traces` also writes step-by-step state/control evidence into `traces/`. Generated results are ignored by Git to avoid accidental versioning of large experiment artifacts.
+`runs.json`, `runs.csv`, `summary.json`, and `summary.csv` include completion, energy, duration, timing violations, cross-track error, and fallback statistics. v0.2 also writes `paired.json` and `paired.csv` with matched-seed comparisons against fixed operation (when both policies are available). Paired energy and time differences are based on runs where both policies completed; all runs contribute to completion and service-target counts. Bootstrap intervals are exploratory, especially with only three seeds. Passing `--traces` also writes step-by-step state/control evidence into `traces/`. Generated results are ignored by Git to avoid accidental versioning of large experiment artifacts.
 
 ## Responsible research interpretation
 
@@ -101,7 +110,7 @@ See [`docs/`](docs/) for architecture, mathematical assumptions, benchmarks, rep
 
 ## Status
 
-**v0.1 — working simulation prototype.** Future work: calibrated physical power traces; adaptive planning under uncertainty; runtime constraint envelopes; more realistic sensor/controller coupling; hardware-in-the-loop studies.
+**v0.2 — service-time-aware energy co-design and paired comparative analysis.** The v0.1 `joint` optimizer remains available to reveal energy-versus-duration trade-offs; the v0.2 `joint_qos` optimizer is a modeled, heuristic time-target guard, **not a guaranteed real-world deadline controller**. Future work: calibrated physical power traces; adaptive planning under uncertainty; runtime constraint envelopes; more realistic sensor/controller coupling; hardware-in-the-loop studies.
 
 ## Citation and license
 

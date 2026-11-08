@@ -14,7 +14,7 @@ def simulate(policy: PolicyName = "joint", scenario: Scenario | None = None,
              *, seed: int = 0, include_trace: bool = False) -> RunResult:
     """Run a synthetic experiment. Same seed means paired localization noise."""
     scenario = scenario if scenario is not None else Scenario()
-    if policy not in ("fixed", "sensing", "computing", "control", "joint"):
+    if policy not in ("fixed", "sensing", "computing", "control", "joint", "joint_qos"):
         raise ValueError(f"Invalid policy: {policy}")
     rng = random.Random(seed)
     state = RobotState(x_m=scenario.waypoints[0][0], y_m=scenario.waypoints[0][1],
@@ -92,4 +92,5 @@ def simulate(policy: PolicyName = "joint", scenario: Scenario | None = None,
                      constraint_violations=constraint_violations,
                      max_tracking_error_m=state.max_cross_track_m,
                      final_distance_m=last_distance, fallback_count=fallback_count,
-                     mode_changes=mode_changes, trace=trace)
+                     mode_changes=mode_changes, trace=trace,
+                     service_time_limit_s=scenario.service_time_limit_s)

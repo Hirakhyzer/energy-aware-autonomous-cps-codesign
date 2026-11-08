@@ -13,7 +13,7 @@ The simulator uses `random.Random(seed)` locally; it does not modify global rand
 
 ## Experiments
 
-Run `eco-cps benchmark --config configs/baseline.json --seeds 0 1 2 --out results/benchmark --traces`. The output includes per-run and aggregated JSON/CSV; the trace option writes per-step positioning, energy, and selected modes. Keep external backups of the exact code revision, configuration, generated data, hardware calibration version, and experiment environment when publishing.
+Run `eco-cps benchmark --config configs/baseline.json --seeds 0 1 2 --out results/benchmark --traces`. For v0.2, use `eco-cps benchmark --config configs/qos-18s.json --seeds 0 1 2 --out results/qos-18s`, followed by `eco-cps report --input results/qos-18s --paired` to inspect matched-seed outcomes and service-target attainment. The output includes per-run, aggregate, and paired analysis JSON/CSV; the trace option writes per-step positioning, energy, and selected modes. Keep external backups of the exact code revision, configuration, generated data, hardware calibration version, and experiment environment when publishing.
 
 ## Limitations
 

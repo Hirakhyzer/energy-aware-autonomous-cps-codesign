@@ -7,7 +7,7 @@ from statistics import mean, stdev
 from .models import PolicyName, RunResult, Scenario
 from .simulation import simulate
 
-POLICIES: tuple[PolicyName, ...] = ("fixed", "sensing", "computing", "control", "joint")
+POLICIES: tuple[PolicyName, ...] = ("fixed", "sensing", "computing", "control", "joint", "joint_qos")
 
 
 def benchmark(scenarios: list[Scenario] | None = None, *, seeds: tuple[int, ...] = (0, 1, 2),
@@ -40,7 +40,10 @@ def summarize(results: list[RunResult]) -> list[dict[str, object]]:
                        "deadline_misses": sum(r.deadline_misses for r in group),
                        "constraint_violations": sum(r.constraint_violations for r in group),
                        "mean_max_tracking_error_m": round(mean(r.max_tracking_error_m for r in group), 6),
-                       "fallback_count": sum(r.fallback_count for r in group)})
+                       "fallback_count": sum(r.fallback_count for r in group),
+                       "service_time_limit_s": group[0].service_time_limit_s,
+                       "service_target_met": (sum(r.service_target_met is True for r in group)
+                                              if group[0].service_time_limit_s is not None else None)})
     return output
 
 
@@ -59,6 +62,13 @@ def save_results(results: list[RunResult], directory: str | Path, *, traces: boo
         writer = csv.DictWriter(f, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
+    paired = paired_analysis(results)
+    (out / "paired.json").write_text(json.dumps(paired, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if paired:
+        with (out / "paired.csv").open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(paired[0]))
+            writer.writeheader()
+            writer.writerows(paired)
     if traces:
         trace_dir = out / "traces"
         trace_dir.mkdir(exist_ok=True)
@@ -72,3 +82,77 @@ def percent_energy_difference(fixed_energy: float, candidate_energy: float) -> f
     if fixed_energy <= 0:
         raise ValueError("Baseline energy must be positive")
     return 100.0 * (fixed_energy - candidate_energy) / fixed_energy
+
+
+def _bootstrap_mean_ci(values: list[float], *, draws: int = 2000) -> tuple[float | None, float | None]:
+    """Exploratory percentile bootstrap on *paired differences*, with deterministic RNG.
+
+    This is descriptive uncertainty, not a generalization guarantee or a formal
+    confidence interval for the underlying physical CPS process.
+    """
+    if len(values) < 2:
+        return None, None
+    import random
+
+    rng = random.Random(2026)
+    n = len(values)
+    boot = sorted(mean(values[rng.randrange(n)] for _ in range(n)) for _ in range(draws))
+    # Nearest observed order statistics avoid interpolation artifacts for small n.
+    return round(boot[int(0.025 * draws)], 6), round(boot[int(0.975 * draws) - 1], 6)
+
+
+def paired_analysis(results: list[RunResult]) -> list[dict[str, object]]:
+    """Matched-seed comparisons against fixed control, preserving failure counts.
+
+    Energy and duration effects use only pairs where *both* policies completed.
+    All paired missions, including failures, contribute to completion and QoS
+    counts. Missing fixed/candidate pairs are not manufactured or imputed.
+    """
+    seen: dict[tuple[str, int, str], RunResult] = {}
+    for run in results:
+        key = run.scenario, run.seed, run.policy
+        if key in seen:
+            raise ValueError(f"Duplicate scenario/seed/policy: {key}")
+        seen[key] = run
+    scenario_policies: dict[tuple[str, str], list[int]] = {}
+    for scenario, seed, policy in seen:
+        if policy == "fixed":
+            continue
+        if (scenario, seed, "fixed") in seen:
+            scenario_policies.setdefault((scenario, policy), []).append(seed)
+    report: list[dict[str, object]] = []
+    for (scenario, policy), seeds in sorted(scenario_policies.items()):
+        matched = [(seen[(scenario, s, "fixed")], seen[(scenario, s, policy)])
+                   for s in sorted(seeds)]
+        if any(base.service_time_limit_s != other.service_time_limit_s
+               for base, other in matched):
+            raise ValueError("Paired policies must use the same service-time target")
+        complete = [(base, other) for base, other in matched if base.completed and other.completed]
+        delta_j = [other.energy.total_j - base.energy.total_j for base, other in complete]
+        delta_s = [other.duration_s - base.duration_s for base, other in complete]
+        energy_ci = _bootstrap_mean_ci(delta_j)
+        duration_ci = _bootstrap_mean_ci(delta_s)
+        # Positive savings mean the candidate uses less energy.
+        report.append({
+            "scenario": scenario,
+            "policy": policy,
+            "paired_trials": len(matched),
+            "complete_pairs": len(complete),
+            "fixed_completions": sum(base.completed for base, _ in matched),
+            "candidate_completions": sum(other.completed for _, other in matched),
+            "service_time_limit_s": matched[0][0].service_time_limit_s,
+            "fixed_service_met": (sum(base.service_target_met is True for base, _ in matched)
+                                  if matched[0][0].service_time_limit_s is not None else None),
+            "candidate_service_met": (sum(other.service_target_met is True for _, other in matched)
+                                      if matched[0][0].service_time_limit_s is not None else None),
+            "mean_energy_delta_j": round(mean(delta_j), 6) if delta_j else None,
+            "energy_delta_ci95_low_j": energy_ci[0],
+            "energy_delta_ci95_high_j": energy_ci[1],
+            "mean_duration_delta_s": round(mean(delta_s), 6) if delta_s else None,
+            "duration_delta_ci95_low_s": duration_ci[0],
+            "duration_delta_ci95_high_s": duration_ci[1],
+            "mean_energy_saving_pct": (round(mean(
+                100.0 * (base.energy.total_j - other.energy.total_j) / base.energy.total_j
+                for base, other in complete), 6) if complete else None),
+        })
+    return report

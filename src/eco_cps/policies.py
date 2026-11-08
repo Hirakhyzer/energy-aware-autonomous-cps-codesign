@@ -7,16 +7,17 @@ from .energy import expected_energy_rate_w, remaining_route_m, cpu_execution_s
 
 
 def candidate_modes(policy: PolicyName) -> list[OperatingMode]:
-    if policy not in ("fixed", "sensing", "computing", "control", "joint"):
+    if policy not in ("fixed", "sensing", "computing", "control", "joint", "joint_qos"):
         raise ValueError(f"Unknown policy: {policy}")
-    sensors = SENSOR_HZ if policy in ("sensing", "joint") else (FIXED_MODE.sensor_hz,)
-    cpus = CPU_MHZ if policy in ("computing", "joint") else (FIXED_MODE.cpu_mhz,)
-    controls = CONTROL_PERIODS if policy in ("control", "joint") else (FIXED_MODE.control_period_s,)
-    speeds = SPEEDS if policy in ("control", "joint") else (FIXED_MODE.cruise_speed_mps,)
+    sensors = SENSOR_HZ if policy in ("sensing", "joint", "joint_qos") else (FIXED_MODE.sensor_hz,)
+    cpus = CPU_MHZ if policy in ("computing", "joint", "joint_qos") else (FIXED_MODE.cpu_mhz,)
+    controls = CONTROL_PERIODS if policy in ("control", "joint", "joint_qos") else (FIXED_MODE.control_period_s,)
+    speeds = SPEEDS if policy in ("control", "joint", "joint_qos") else (FIXED_MODE.cruise_speed_mps,)
     return [OperatingMode(*parameters) for parameters in product(sensors, cpus, controls, speeds)]
 
 
-def feasibility_reasons(mode: OperatingMode, scenario: Scenario, state: RobotState) -> list[str]:
+def feasibility_reasons(mode: OperatingMode, scenario: Scenario, state: RobotState,
+                        *, enforce_service_target: bool = False) -> list[str]:
     """Predictive constraints are model-based; do not interpret as a safety proof."""
     reasons: list[str] = []
     uncertainty_bound = scenario.sensor_noise_m + scenario.process_noise_m_per_s / mode.sensor_hz
@@ -34,6 +35,9 @@ def feasibility_reasons(mode: OperatingMode, scenario: Scenario, state: RobotSta
     required_time = distance / mode.cruise_speed_mps + 0.7 * corners
     if state.time_s + required_time > scenario.deadline_s + 1e-12:
         reasons.append("mission_deadline")
+    if (enforce_service_target and scenario.service_time_limit_s is not None and
+        state.time_s + required_time > scenario.service_time_limit_s + 1e-12):
+        reasons.append("service_time_target")
     predicted_energy = required_time * expected_energy_rate_w(mode, scenario)
     if state.energy_remaining_j - predicted_energy < scenario.reserve_energy_j:
         reasons.append("battery_reserve")
@@ -46,7 +50,8 @@ def choose_mode(policy: PolicyName, scenario: Scenario, state: RobotState,
         return FIXED_MODE, False
     ranked: list[tuple[float, OperatingMode]] = []
     for mode in candidate_modes(policy):
-        if feasibility_reasons(mode, scenario, state):
+        if feasibility_reasons(mode, scenario, state,
+                               enforce_service_target=(policy == "joint_qos")):
             continue
         distance = remaining_route_m(state.x_m, state.y_m, state.target_index, scenario.waypoints)
         corners = max(0, len(scenario.waypoints) - state.target_index - 1)
