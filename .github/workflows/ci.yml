@@ -27,5 +27,8 @@ jobs:
           eco-cps simulate --config configs/qos-18s.json --policy joint_qos --seed 7
           eco-cps benchmark --config configs/qos-18s.json --seeds 0 1 --out results/qos-ci
           eco-cps report --input results/qos-ci --paired
+          eco-cps simulate --config configs/robust-moderate.json --policy joint_robust --seed 7
+          eco-cps benchmark --config configs/robust-moderate.json --seeds 0 1 --out results/robust-ci
+          eco-cps report --input results/robust-ci --paired
       - name: Module entry point
         run: python -m eco_cps --help

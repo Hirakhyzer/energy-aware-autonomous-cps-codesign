@@ -50,8 +50,8 @@ def test_qos_reporting_is_matched_and_reproducible(tmp_path):
     scenario = load_scenario('configs/qos-18s.json')
     results = benchmark([scenario], seeds=(0, 1, 2))
     pairs = paired_analysis(results)
-    assert len(results) == 18
-    assert len(pairs) == 5
+    assert len(results) == 21
+    assert len(pairs) == 6
     assert paired_analysis(list(reversed(results))) == pairs
     qos = next(row for row in pairs if row['policy'] == 'joint_qos')
     joint = next(row for row in pairs if row['policy'] == 'joint')
@@ -90,12 +90,12 @@ def test_cli_qos_and_paired_report(tmp_path):
     run = subprocess.run([sys.executable, '-m', 'eco_cps', 'benchmark',
                           '--config', 'configs/qos-18s.json', '--seeds', '0', '1',
                           '--out', str(dest)], capture_output=True, text=True, check=True)
-    assert len(json.loads(run.stdout)) == 6
+    assert len(json.loads(run.stdout)) == 7
     report = subprocess.run([sys.executable, '-m', 'eco_cps', 'report',
                              '--input', str(dest), '--paired'],
                             capture_output=True, text=True, check=True)
     parsed = json.loads(report.stdout)
-    assert len(parsed) == 5
+    assert len(parsed) == 6
     assert any(row['policy'] == 'joint_qos' for row in parsed)
 
 

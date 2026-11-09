@@ -1,0 +1,7 @@
+scenario,policy,paired_trials,complete_pairs,fixed_completions,candidate_completions,service_time_limit_s,fixed_service_met,candidate_service_met,mean_energy_delta_j,energy_delta_ci95_low_j,energy_delta_ci95_high_j,mean_duration_delta_s,duration_delta_ci95_low_s,duration_delta_ci95_high_s,mean_energy_saving_pct
+robust-high,computing,100,100,100,100,,,,-0.698915,-0.732677,-0.663921,0.0,0.0,0.0,1.995019
+robust-high,control,100,100,100,100,,,,-1.299205,-1.394766,-1.207679,4.017,3.998,4.037,3.542159
+robust-high,joint,100,100,100,100,,,,-6.12947,-6.279741,-5.978419,11.834,11.78,11.885,17.193929
+robust-high,joint_qos,100,100,100,100,,,,-6.12947,-6.279741,-5.978419,11.834,11.78,11.885,17.193929
+robust-high,joint_robust,100,100,100,100,,,,-5.988202,-6.101672,-5.873436,4.013,3.995,4.032,16.907527
+robust-high,sensing,100,100,100,100,,,,-3.373139,-3.457618,-3.284581,0.008,-0.014,0.03,9.614631

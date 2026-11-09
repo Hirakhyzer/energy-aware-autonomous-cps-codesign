@@ -23,11 +23,13 @@ def track_control(state: RobotState, mode: OperatingMode, scenario: Scenario) ->
     return speed, turn
 
 
-def integrate_robot(state: RobotState, scenario: Scenario, rng: random.Random, mode: OperatingMode, *, sample: bool) -> float:
+def integrate_robot(state: RobotState, scenario: Scenario, rng: random.Random, mode: OperatingMode, *,
+                    sample: bool, disturbance_x_mps: float = 0.0,
+                    disturbance_y_mps: float = 0.0) -> float:
     """Advance a single step; return current waypoint tracking distance."""
     dt = scenario.dt_s
-    dx = state.speed_command_mps * math.cos(state.heading_rad) * dt
-    dy = state.speed_command_mps * math.sin(state.heading_rad) * dt
+    dx = (state.speed_command_mps * math.cos(state.heading_rad) + disturbance_x_mps) * dt
+    dy = (state.speed_command_mps * math.sin(state.heading_rad) + disturbance_y_mps) * dt
     state.x_m += dx
     state.y_m += dy
     state.heading_rad = wrapped_angle(state.heading_rad + state.turn_command_radps * dt)

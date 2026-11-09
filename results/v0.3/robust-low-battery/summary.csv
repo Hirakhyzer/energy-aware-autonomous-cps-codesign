@@ -1,0 +1,8 @@
+scenario,policy,trials,completed,completion_rate,mean_energy_j,mean_completed_energy_j,p95_energy_j,sd_energy_j,mean_duration_s,mean_completed_duration_s,deadline_misses,constraint_violations,mean_max_tracking_error_m,fallback_count,service_time_limit_s,service_target_met
+robust-low-battery,computing,100,100,1.0,35.195012,35.195012,41.604631,4.280892,14.324,14.324,0,0,0.202997,0,,
+robust-low-battery,control,100,100,1.0,34.577185,34.577185,40.361386,3.938763,18.333,18.333,0,0,0.188161,0,,
+robust-low-battery,fixed,100,100,1.0,35.892272,35.892272,42.39264,4.272596,14.324,14.324,0,0,0.202997,0,,
+robust-low-battery,joint,100,100,1.0,29.738244,29.738244,35.702328,3.708337,26.181,26.181,0,0,0.193805,0,,
+robust-low-battery,joint_qos,100,100,1.0,29.738244,29.738244,35.702328,3.708337,26.181,26.181,0,0,0.193805,0,,
+robust-low-battery,joint_robust,100,100,1.0,30.231708,30.231708,36.475097,3.961704,18.335,18.335,0,0,0.188017,100,,
+robust-low-battery,sensing,100,100,1.0,32.494051,32.494051,39.328058,4.276749,14.32,14.32,0,0,0.201891,0,,

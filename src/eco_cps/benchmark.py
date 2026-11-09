@@ -1,13 +1,15 @@
 """Paired reproducible benchmarks and auditable JSON/CSV artifacts."""
 from __future__ import annotations
 import csv
+import gzip
 import json
 from pathlib import Path
 from statistics import mean, stdev
+from math import ceil
 from .models import PolicyName, RunResult, Scenario
 from .simulation import simulate
 
-POLICIES: tuple[PolicyName, ...] = ("fixed", "sensing", "computing", "control", "joint", "joint_qos")
+POLICIES: tuple[PolicyName, ...] = ("fixed", "sensing", "computing", "control", "joint", "joint_qos", "joint_robust")
 
 
 def benchmark(scenarios: list[Scenario] | None = None, *, seeds: tuple[int, ...] = (0, 1, 2),
@@ -32,11 +34,18 @@ def summarize(results: list[RunResult]) -> list[dict[str, object]]:
     output: list[dict[str, object]] = []
     for (scenario, policy), group in sorted(groups.items()):
         energies = [r.energy.total_j for r in group]
+        completed_runs = [r for r in group if r.completed]
+        sorted_energies = sorted(energies)
+        p95_energy = sorted_energies[min(len(sorted_energies) - 1, ceil(0.95 * len(sorted_energies)) - 1)]
         output.append({"scenario": scenario, "policy": policy, "trials": len(group),
-                       "completed": sum(r.completed for r in group),
+                       "completed": len(completed_runs),
+                       "completion_rate": round(len(completed_runs) / len(group), 6),
                        "mean_energy_j": round(mean(energies), 6),
+                       "mean_completed_energy_j": round(mean(r.energy.total_j for r in completed_runs), 6) if completed_runs else None,
+                       "p95_energy_j": round(p95_energy, 6),
                        "sd_energy_j": round(stdev(energies), 6) if len(group) > 1 else 0.0,
                        "mean_duration_s": round(mean(r.duration_s for r in group), 6),
+                       "mean_completed_duration_s": round(mean(r.duration_s for r in completed_runs), 6) if completed_runs else None,
                        "deadline_misses": sum(r.deadline_misses for r in group),
                        "constraint_violations": sum(r.constraint_violations for r in group),
                        "mean_max_tracking_error_m": round(mean(r.max_tracking_error_m for r in group), 6),
@@ -51,7 +60,12 @@ def save_results(results: list[RunResult], directory: str | Path, *, traces: boo
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     records = [r.summary() for r in results]
-    (out / "runs.json").write_text(json.dumps(records, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    run_json = json.dumps(records, indent=2, sort_keys=True) + "\n"
+    (out / "runs.json").write_text(run_json, encoding="utf-8")
+    # Stable gzip metadata keeps the archived raw experiment reproducible.
+    with (out / "runs.json.gz").open("wb") as raw:
+        with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as compressed:
+            compressed.write(run_json.encode("utf-8"))
     with (out / "runs.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(records[0]))
         writer.writeheader()

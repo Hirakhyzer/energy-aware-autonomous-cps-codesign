@@ -1,0 +1,8 @@
+scenario,policy,trials,completed,completion_rate,mean_energy_j,mean_completed_energy_j,p95_energy_j,sd_energy_j,mean_duration_s,mean_completed_duration_s,deadline_misses,constraint_violations,mean_max_tracking_error_m,fallback_count,service_time_limit_s,service_target_met
+robust-high,computing,100,100,1.0,35.107364,35.107364,42.850462,5.139243,14.32,14.32,0,0,0.203675,0,,
+robust-high,control,100,100,1.0,34.507074,34.507074,41.511683,4.732891,18.337,18.337,0,0,0.187515,0,,
+robust-high,fixed,100,100,1.0,35.806279,35.806279,43.659039,5.128553,14.32,14.32,0,0,0.203675,0,,
+robust-high,joint,100,100,1.0,29.676809,29.676809,36.823872,4.457724,26.154,26.154,0,0,0.193305,0,,
+robust-high,joint_qos,100,100,1.0,29.676809,29.676809,36.823872,4.457724,26.154,26.154,0,0,0.193305,0,,
+robust-high,joint_robust,100,100,1.0,29.818077,29.818077,37.290322,4.749873,18.333,18.333,0,0,0.187122,0,,
+robust-high,sensing,100,100,1.0,32.43314,32.43314,40.635722,5.151635,14.328,14.328,0,0,0.203754,0,,

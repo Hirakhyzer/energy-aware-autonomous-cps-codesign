@@ -1,3 +1,4 @@
+import gzip
 import json
 import subprocess
 import sys
@@ -10,21 +11,23 @@ from eco_cps.models import Scenario
 
 def test_paired_benchmark_cross_product():
     rows = benchmark([Scenario()], seeds=(0, 1))
-    assert len(rows) == 12
-    assert {r.policy for r in rows} == {'fixed', 'sensing', 'computing', 'control', 'joint', 'joint_qos'}
+    assert len(rows) == 14
+    assert {r.policy for r in rows} == {'fixed', 'sensing', 'computing', 'control', 'joint', 'joint_qos', 'joint_robust'}
     assert {r.seed for r in rows} == {0, 1}
-    assert len(summarize(rows)) == 6
+    assert len(summarize(rows)) == 7
 
 
 def test_benchmark_outputs_roundtrip(tmp_path):
     rows = benchmark(seeds=(1,))
     folder = save_results(rows, tmp_path / 'out', traces=True)
-    assert len(json.loads((folder / 'runs.json').read_text())) == 6
-    assert len(json.loads((folder / 'summary.json').read_text())) == 6
-    assert len(list((folder / 'traces').glob('*.json'))) == 6
-    assert len((folder / 'runs.csv').read_text().splitlines()) == 7
-    assert len(json.loads((folder / 'paired.json').read_text())) == 5
-    assert len((folder / 'paired.csv').read_text().splitlines()) == 6
+    assert len(json.loads((folder / 'runs.json').read_text())) == 7
+    with gzip.open(folder / 'runs.json.gz', 'rt', encoding='utf-8') as archive:
+        assert json.load(archive) == json.loads((folder / 'runs.json').read_text())
+    assert len(json.loads((folder / 'summary.json').read_text())) == 7
+    assert len(list((folder / 'traces').glob('*.json'))) == 7
+    assert len((folder / 'runs.csv').read_text().splitlines()) == 8
+    assert len(json.loads((folder / 'paired.json').read_text())) == 6
+    assert len((folder / 'paired.csv').read_text().splitlines()) == 7
 
 
 def test_config_loads_and_rejects_unknown_fields(tmp_path):
@@ -47,7 +50,7 @@ def test_cli_simulate_and_report(tmp_path):
                     '--out', str(path)], capture_output=True, text=True, check=True)
     report = subprocess.run([sys.executable, '-m', 'eco_cps', 'report', '--input', str(path)],
                             capture_output=True, text=True, check=True)
-    assert len(json.loads(report.stdout)) == 6
+    assert len(json.loads(report.stdout)) == 7
 
 
 def test_bad_benchmark_requests_rejected():

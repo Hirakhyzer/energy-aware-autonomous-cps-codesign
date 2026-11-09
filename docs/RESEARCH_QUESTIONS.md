@@ -10,12 +10,15 @@
 
 **RQ5 (v0.2).** How much modeled energy can be saved while meeting an explicit mission-completion service target, and how do the results compare with unconstrained joint energy optimization?
 
+**RQ6 (v0.3).** Does bounded-uncertainty, risk-aware joint optimization improve energy/performance outcomes and constraint attainment relative to nominal joint optimization under matched episode uncertainty and disturbances?
+
 ## Hypotheses to test (not established findings)
 
 - H1: The joint policy uses less energy than fixed operation on at least some specified scenarios.
 - H2: Joint adaptation improves over individual ablations when cross-layer interactions matter.
 - H3: Constraint violations and mission failures can be explicitly attributed to estimation, compute, control, battery, or timing limits.
-- H4: Calibrated hardware energy models improve the agreement between predicted and measured energy.
+- H4: Calibrated hardware energy models improve the agreement between predicted and measured energy (future optional validation; not part of the current software-only milestone).
+- H5: `joint_robust` reduces high-end modeled energy exposure or constraint failures relative to nominal `joint` across declared uncertainty scenarios, without unacceptable losses in mission completion or duration.
 
 ## Novelty caution
 

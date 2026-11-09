@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from math import isfinite
 from typing import Literal
 
-PolicyName = Literal["fixed", "sensing", "computing", "control", "joint", "joint_qos"]
+PolicyName = Literal["fixed", "sensing", "computing", "control", "joint", "joint_qos", "joint_robust"]
 
 
 @dataclass(frozen=True)
@@ -48,6 +48,12 @@ class Scenario:
     switch_energy_j: float = 0.018
     optimize_period_s: float = 0.5
     service_time_limit_s: float | None = None
+    # Bounded episode-level parameter uncertainty and per-step velocity disturbance.
+    # These are dimensionless uncertainty bounds / m/s simulation assumptions.
+    uncertainty_fraction: float = 0.0
+    workload_variation_fraction: float = 0.0
+    robust_risk_weight: float = 0.65
+    disturbance_mps: float = 0.0
     waypoints: tuple[tuple[float, float], ...] = (
         (0.0, 0.0), (3.0, 0.0), (3.0, 2.0), (5.0, 2.0), (5.0, 5.0)
     )
@@ -57,7 +63,9 @@ class Scenario:
                    self.max_position_uncertainty_m, self.max_control_period_s,
                    self.cpu_utilization_limit, self.max_cross_track_error_m,
                    self.motion_load, self.sensor_noise_m, self.process_noise_m_per_s,
-                   self.optimize_period_s)
+                   self.optimize_period_s, self.uncertainty_fraction,
+                   self.workload_variation_fraction, self.robust_risk_weight,
+                   self.disturbance_mps)
         if self.service_time_limit_s is not None:
             if (not isfinite(self.service_time_limit_s) or
                 not 0 < self.service_time_limit_s <= self.deadline_s):
@@ -68,6 +76,14 @@ class Scenario:
                                 self.max_position_uncertainty_m, self.max_control_period_s,
                                 self.motion_load, self.optimize_period_s)):
             raise ValueError("Time, energy, uncertainty, and load parameters must be positive")
+        if not 0 <= self.uncertainty_fraction <= 0.5:
+            raise ValueError("uncertainty_fraction must be between 0 and 0.5")
+        if not 0 <= self.workload_variation_fraction <= 0.5:
+            raise ValueError("workload_variation_fraction must be between 0 and 0.5")
+        if not 0 <= self.robust_risk_weight <= 1:
+            raise ValueError("robust_risk_weight must be between 0 and 1")
+        if self.disturbance_mps < 0:
+            raise ValueError("disturbance_mps must be nonnegative")
         if not 0 < self.cpu_utilization_limit <= 1:
             raise ValueError("CPU utilization limit must be in (0, 1]")
         if not 0 <= self.reserve_energy_j < self.initial_energy_j:
@@ -135,6 +151,9 @@ class RunResult:
     mode_changes: int
     trace: list[dict[str, float | int | str | bool]] = field(default_factory=list)
     service_time_limit_s: float | None = None
+    uncertainty_factors: dict[str, float] = field(default_factory=dict)
+    workload_scale_mean: float = 1.0
+    workload_scale_max: float = 1.0
 
     @property
     def service_target_met(self) -> bool | None:
@@ -152,4 +171,7 @@ class RunResult:
                 "final_distance_m": round(self.final_distance_m, 6),
                 "fallback_count": self.fallback_count, "mode_changes": self.mode_changes,
                 "service_time_limit_s": self.service_time_limit_s,
-                "service_target_met": self.service_target_met}
+                "service_target_met": self.service_target_met,
+                "uncertainty_factors": {k: round(v, 6) for k, v in self.uncertainty_factors.items()},
+                "workload_scale_mean": round(self.workload_scale_mean, 6),
+                "workload_scale_max": round(self.workload_scale_max, 6)}

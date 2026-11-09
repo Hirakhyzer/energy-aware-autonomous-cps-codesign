@@ -1,0 +1,19 @@
+{
+  "name": "robust-moderate",
+  "dt_s": 0.1,
+  "deadline_s": 58.0,
+  "initial_energy_j": 270.0,
+  "reserve_energy_j": 18.0,
+  "max_position_uncertainty_m": 0.22,
+  "max_control_period_s": 0.4,
+  "cpu_utilization_limit": 0.8,
+  "max_cross_track_error_m": 1.5,
+  "motion_load": 1.05,
+  "sensor_noise_m": 0.012,
+  "process_noise_m_per_s": 0.022,
+  "uncertainty_fraction": 0.15,
+  "workload_variation_fraction": 0.15,
+  "robust_risk_weight": 0.65,
+  "disturbance_mps": 0.025,
+  "optimize_period_s": 0.5
+}

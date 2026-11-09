@@ -6,4 +6,4 @@ from .simulation import simulate
 
 __all__ = ["EnergyLedger", "OperatingMode", "RunResult", "Scenario", "POLICIES",
            "simulate", "benchmark", "summarize", "paired_analysis", "choose_mode", "feasibility_reasons"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"

@@ -1,0 +1,19 @@
+{
+  "name": "robust-low-battery",
+  "dt_s": 0.1,
+  "deadline_s": 60.0,
+  "initial_energy_j": 72.0,
+  "reserve_energy_j": 15.0,
+  "max_position_uncertainty_m": 0.24,
+  "max_control_period_s": 0.4,
+  "cpu_utilization_limit": 0.8,
+  "max_cross_track_error_m": 1.6,
+  "motion_load": 1.10,
+  "sensor_noise_m": 0.013,
+  "process_noise_m_per_s": 0.024,
+  "uncertainty_fraction": 0.25,
+  "workload_variation_fraction": 0.20,
+  "robust_risk_weight": 0.85,
+  "disturbance_mps": 0.035,
+  "optimize_period_s": 0.5
+}

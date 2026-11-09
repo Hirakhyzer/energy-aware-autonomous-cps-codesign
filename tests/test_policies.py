@@ -10,6 +10,7 @@ def test_policy_candidate_ablation_sizes():
     assert len(candidate_modes('control')) == 9
     assert len(candidate_modes('joint')) == 81
     assert len(candidate_modes('joint_qos')) == 81
+    assert len(candidate_modes('joint_robust')) == 81
 
 
 def test_joint_is_not_fixed_in_nominal_case():
