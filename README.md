@@ -107,6 +107,10 @@ Actual simulation energy is calculated by integrating a per-component model: `E_
 
 `runs.json`, `runs.csv`, and deterministic `runs.json.gz` archives include completion, energy, duration, timing violations, cross-track error, fallback statistics, episode uncertainty factors, and per-tick workload summaries. `summary.json` and `summary.csv` contain aggregate metrics. v0.2 and v0.3 write `paired.json` and `paired.csv` with matched-seed comparisons against fixed operation (when both policies are available). Paired energy and time differences are based on runs where both policies completed; all runs contribute to completion and service-target counts. Bootstrap intervals are exploratory. Passing `--traces` also writes step-by-step state/control evidence into `traces/`. Generated results are ignored by default; the v0.3 reference experiment artifacts are intentionally committed under `results/v0.3/`.
 
+## v0.4: empirical energy–duration Pareto frontier
+
+Each benchmark now exports `pareto.json` and (when nonempty) `pareto.csv`. For each scenario, policies qualify only if **all trials complete**, with zero recorded CPU deadline misses and zero recorded state-constraint violations. Among those eligible policies, the output retains nondominated mean-energy/mean-duration points. This makes the modeled energy–service-time trade-off inspectable without conflating early failures with energy savings. It is an **empirical, aggregate** frontier over tested policies and seeds, not a proof of safety, optimality, or statistical significance. An empty frontier means no tested policy passed the screening rules.
+
 ## v0.3 reference simulation results
 
 The committed v0.3 experiment artifacts contain **100 matched seeds per scenario and seven policies** (2,100 policy-mission runs total). The following values are from the synthetic simulator, not physical measurements.
