@@ -4,6 +4,8 @@ This is descriptive analysis of simulated aggregate results, not a safety proof.
 """
 from __future__ import annotations
 
+from math import isfinite
+
 
 def pareto_frontier(summary: list[dict[str, object]]) -> list[dict[str, object]]:
     """Return scenario-wise nondominated policies with fully successful trials.
@@ -13,7 +15,17 @@ def pareto_frontier(summary: list[dict[str, object]]) -> list[dict[str, object]]
     early termination. Equal objective pairs remain on the frontier.
     """
     eligible: list[dict[str, object]] = []
+    seen: set[tuple[str, str]] = set()
     for row in summary:
+        key = (row["scenario"], row["policy"])
+        if key in seen:
+            raise ValueError(f"Duplicate scenario/policy summary: {key}")
+        seen.add(key)
+        for metric in ("mean_energy_j", "mean_duration_s"):
+            value = row[metric]
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not isfinite(value) or value < 0):
+                raise ValueError(f"{metric} must be a finite non-negative number")
         trials = row["trials"]
         if (not isinstance(trials, int) or isinstance(trials, bool) or trials < 1):
             raise ValueError("trials must be a positive integer")
