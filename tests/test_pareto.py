@@ -49,3 +49,22 @@ def test_invalid_trial_counts_rejected(trials):
     candidate["trials"] = trials
     with pytest.raises(ValueError, match="trials"):
         pareto_frontier([candidate])
+
+
+@pytest.mark.parametrize("field,bad_value", [
+    ("mean_energy_j", float("nan")),
+    ("mean_energy_j", float("inf")),
+    ("mean_energy_j", -1.0),
+    ("mean_duration_s", float("-inf")),
+    ("mean_duration_s", True),
+])
+def test_invalid_pareto_metrics_rejected(field, bad_value):
+    candidate = row("a", 1, 1)
+    candidate[field] = bad_value
+    with pytest.raises(ValueError, match=field):
+        pareto_frontier([candidate])
+
+
+def test_duplicate_policy_summaries_rejected():
+    with pytest.raises(ValueError, match="Duplicate"):
+        pareto_frontier([row("a", 1, 2), row("a", 2, 1)])
