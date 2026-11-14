@@ -8,6 +8,7 @@ from statistics import mean, stdev
 from math import ceil
 from .models import PolicyName, RunResult, Scenario
 from .simulation import simulate
+from .pareto import pareto_frontier
 
 POLICIES: tuple[PolicyName, ...] = ("fixed", "sensing", "computing", "control", "joint", "joint_qos", "joint_robust")
 
@@ -76,6 +77,13 @@ def save_results(results: list[RunResult], directory: str | Path, *, traces: boo
         writer = csv.DictWriter(f, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
+    frontier = pareto_frontier(summary)
+    (out / "pareto.json").write_text(json.dumps(frontier, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if frontier:
+        with (out / "pareto.csv").open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=list(frontier[0]))
+            writer.writeheader()
+            writer.writerows(frontier)
     paired = paired_analysis(results)
     (out / "paired.json").write_text(json.dumps(paired, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if paired:
