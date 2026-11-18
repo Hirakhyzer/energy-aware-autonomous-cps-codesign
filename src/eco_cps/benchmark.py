@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import gzip
 import json
+import hashlib
+import re
 from pathlib import Path
 from statistics import mean, stdev
 from math import ceil
@@ -58,9 +60,20 @@ def summarize(results: list[RunResult]) -> list[dict[str, object]]:
     return output
 
 
+def _trace_filename(run: RunResult) -> str:
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", run.scenario):
+        name = run.scenario
+    else:
+        slug = re.sub(r"[^A-Za-z0-9._-]", "_", run.scenario).strip("._-")[:48] or "scenario"
+        digest = hashlib.sha256(run.scenario.encode("utf-8")).hexdigest()[:12]
+        name = f"{slug}-{digest}"
+    return f"{name}-{run.policy}-{run.seed}.json"
+
+
 def save_results(results: list[RunResult], directory: str | Path, *, traces: bool = False) -> Path:
     if not results:
         raise ValueError("Cannot save an empty benchmark")
+    paired = paired_analysis(results)
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     records = [r.summary() for r in results]
@@ -80,7 +93,6 @@ def save_results(results: list[RunResult], directory: str | Path, *, traces: boo
         writer = csv.DictWriter(f, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
-    paired = paired_analysis(results)
     (out / "paired.json").write_text(json.dumps(paired, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if paired:
         with (out / "paired.csv").open("w", newline="", encoding="utf-8") as f:
@@ -91,7 +103,7 @@ def save_results(results: list[RunResult], directory: str | Path, *, traces: boo
         trace_dir = out / "traces"
         trace_dir.mkdir(exist_ok=True)
         for r in results:
-            (trace_dir / f"{r.scenario}-{r.policy}-{r.seed}.json").write_text(
+            (trace_dir / _trace_filename(r)).write_text(
                 json.dumps(r.trace, indent=2) + "\n", encoding="utf-8")
     return out
 

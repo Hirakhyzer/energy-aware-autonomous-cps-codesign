@@ -43,3 +43,42 @@ def test_saving_empty_results_fails_before_creating_directory(tmp_path):
     with pytest.raises(ValueError, match="empty benchmark"):
         save_results([], destination)
     assert not destination.exists()
+
+def test_trace_filenames_cannot_escape_output_directory(tmp_path):
+    from eco_cps.simulation import simulate
+
+    unsafe = "../../outside/example"
+    run = simulate("fixed", Scenario(name=unsafe), seed=0, include_trace=True)
+    folder = save_results([run], tmp_path / "out", traces=True)
+    traces = list((folder / "traces").glob("*.json"))
+    assert len(traces) == 1
+    assert traces[0].parent == folder / "traces"
+    assert json.loads((folder / "runs.json").read_text())[-1]["scenario"] == unsafe
+    assert not (tmp_path / "outside").exists()
+
+
+def test_trace_names_remain_distinct_after_sanitization(tmp_path):
+    from eco_cps.simulation import simulate
+
+    left = simulate("fixed", Scenario(name="route/a"), seed=0, include_trace=True)
+    right = simulate("fixed", Scenario(name="route?a"), seed=0, include_trace=True)
+    folder = save_results([left, right], tmp_path / "out", traces=True)
+    assert len(list((folder / "traces").glob("*.json"))) == 2
+
+
+def test_safe_trace_names_keep_existing_format(tmp_path):
+    from eco_cps.simulation import simulate
+
+    run = simulate("fixed", Scenario(name="nominal"), seed=0, include_trace=True)
+    folder = save_results([run], tmp_path / "out", traces=True)
+    assert (folder / "traces" / "nominal-fixed-0.json").is_file()
+
+
+def test_duplicate_run_keys_rejected_before_saving(tmp_path):
+    from eco_cps.simulation import simulate
+
+    run = simulate("fixed", Scenario(), seed=0)
+    destination = tmp_path / "out"
+    with pytest.raises(ValueError, match="Duplicate scenario/seed/policy"):
+        save_results([run, run], destination)
+    assert not destination.exists()
