@@ -15,6 +15,7 @@ The platform implements a seeded differential-drive *unicycle* robot benchmark, 
 - **Joint policy:** enumerate 81 candidate configurations, reject those violating approximate feasibility checks, and minimize predicted mission energy including switching penalties.
 - **Conservative fallback:** choose the fixed high-fidelity configuration if all candidates are rejected. Log fallback; **do not** claim fallback is safe or feasible when constraints cannot be met.
 - **Seven policies (v0.3):** fixed, sensing-only, computing-only, control-only, energy-only joint adaptation, v0.2 service-time-aware `joint_qos`, and v0.3 uncertainty-aware `joint_robust`.
+- **v0.3.1 maintenance:** strict scenario and waypoint validation, unique benchmark scenario names, safe trace filenames, and early rejection of invalid result sets; no changes to the physical model or previously archived simulation data.
 - **Service-quality constraint (v0.2):** an optional mission-completion target separate from the hard mission deadline, with deadline-aware selection for `joint_qos` and per-run observed target attainment.
 - **Matched-seed analysis (v0.2):** paired energy and mission-time differences against fixed control, completion and target-attainment counts, and deterministic exploratory percentile bootstrap intervals.
 - **Bounded uncertainty (v0.3):** matched episode-level uncertainty in motion load, computing/sensing/communication power, sensor noise, process noise, and CPU execution time, plus bounded per-step x/y velocity disturbances and variable per-tick CPU workload.
