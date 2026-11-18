@@ -15,7 +15,9 @@ def load_scenario(path: str | Path) -> Scenario:
     if unknown:
         raise ValueError(f"Unknown scenario fields: {', '.join(sorted(unknown))}")
     if "waypoints" in raw:
-        if not isinstance(raw["waypoints"], list):
+        if not isinstance(raw["waypoints"], list) or any(
+            not isinstance(point, list) for point in raw["waypoints"]
+        ):
             raise ValueError("Waypoints must be an array of two-dimensional points")
         raw["waypoints"] = tuple(tuple(point) for point in raw["waypoints"])
     return Scenario(**raw)

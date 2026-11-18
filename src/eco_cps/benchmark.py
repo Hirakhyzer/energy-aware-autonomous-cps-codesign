@@ -21,6 +21,8 @@ def benchmark(scenarios: list[Scenario] | None = None, *, seeds: tuple[int, ...]
     scenarios = scenarios if scenarios is not None else [Scenario()]
     if not scenarios:
         raise ValueError("At least one scenario is required")
+    if len({scenario.name for scenario in scenarios}) != len(scenarios):
+        raise ValueError("Scenario names must be unique to preserve benchmark attribution")
     return [simulate(policy, scenario, seed=seed, include_trace=include_traces)
             for scenario in scenarios for seed in seeds for policy in POLICIES]
 
@@ -57,6 +59,8 @@ def summarize(results: list[RunResult]) -> list[dict[str, object]]:
 
 
 def save_results(results: list[RunResult], directory: str | Path, *, traces: bool = False) -> Path:
+    if not results:
+        raise ValueError("Cannot save an empty benchmark")
     out = Path(directory)
     out.mkdir(parents=True, exist_ok=True)
     records = [r.summary() for r in results]

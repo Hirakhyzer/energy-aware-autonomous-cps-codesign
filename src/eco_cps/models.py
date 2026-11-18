@@ -59,6 +59,8 @@ class Scenario:
     )
 
     def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("Scenario name must be a non-empty string")
         numeric = (self.dt_s, self.deadline_s, self.initial_energy_j, self.reserve_energy_j,
                    self.max_position_uncertainty_m, self.max_control_period_s,
                    self.cpu_utilization_limit, self.max_cross_track_error_m,
@@ -90,8 +92,11 @@ class Scenario:
             raise ValueError("Reserve energy must be nonnegative and below initial energy")
         if self.sensor_noise_m < 0 or self.process_noise_m_per_s < 0 or self.switch_energy_j < 0:
             raise ValueError("Noise and switching cost must be nonnegative")
-        if len(self.waypoints) < 2 or any(len(w) != 2 or not all(isfinite(v) for v in w) for w in self.waypoints):
-            raise ValueError("At least two finite 2D waypoints are required")
+        if (not isinstance(self.waypoints, (tuple, list)) or len(self.waypoints) < 2 or
+            any(not isinstance(w, (tuple, list)) or len(w) != 2 or
+                any(isinstance(v, bool) or not isinstance(v, (int, float)) or not isfinite(v)
+                    for v in w) for w in self.waypoints)):
+            raise ValueError("At least two finite numeric 2D waypoints are required")
         if self.dt_s > min(CONTROL_PERIODS) + 1e-9:
             raise ValueError("dt_s may not exceed the shortest control period")
 
